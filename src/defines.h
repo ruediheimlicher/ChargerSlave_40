@@ -14,6 +14,8 @@
 //#define LADEPORT  PORTC
 //#define LADEDDR  DDRC
 
+#define TEENSYVREF  3.30  // VRef 
+
 #define MAX_STROM_L_BYTE   10
 #define MAX_STROM_H_BYTE   11
 

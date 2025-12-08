@@ -61,7 +61,7 @@ ADC *adc = new ADC(); // adc object
 volatile uint16_t TEENSYVREF_Int = 0;
 
 static volatile uint8_t recvbuffer[64]={};
-static volatile uint8_t sendbuffer[64]={};
+volatile uint8_t sendbuffer[64]={};
 
 volatile uint8_t           adcstatus=0x00;
 volatile uint16_t          adctimercounter = 0;
@@ -419,7 +419,7 @@ uint8_t checkSPItasten() // MCP23S17 abrufen // Takt ca. 300us
    //tastencode = 0xFF - mcp0.gpioReadPortB(); // 8 us active taste ist LO > invertieren
      
    //digitalWriteFast(OSZIB,HIGH);
-   //digitalWriteFast(OSZIB,LOW);
+
    while (i<8) // 1us
    {
       uint8_t pressed = 0;
@@ -454,7 +454,7 @@ void prellcheck(void) // 30us debounce mit ganssle-funktion
    // MCP lesen
  /*  
    regB = bereichpos;
-//   digitalWriteFast(OSZIB,LOW);
+   //   digitalWriteFast(OSZIB,LOW);
    uint8_t regBB = (regB & 0x07)<< 5;
    mcp0.gpioWritePortA((regA | regBB)); // output
   //digitalWriteFast(OSZIB,HIGH);
@@ -527,7 +527,7 @@ void init_analog(void)
 
 void adctimerfunction()
 {
-   OSZIBTOGG();
+   //OSZIBTOGG();
    sekundentimercounter++;
    if (sekundentimercounter == 50)
    {
@@ -546,7 +546,7 @@ void adctimerfunction()
       sekundentimercounter=0;
       adctimersekunde++;
       //digitalWriteFast(OSZI_PULS_A, !digitalReadFast(OSZI_PULS_A));
-      OSZIATOGG();
+      //OSZIATOGG();
    }
 }
 
@@ -585,11 +585,11 @@ void stop_Load()
    sendbuffer[7] = 77;
    sendbuffer[USB_PACKETSIZE-1] = 77;
    
-//  lcd_gotoxy(6,3);
-//   lcd_putint(blockcounter & 0x00FF);
+   //  lcd_gotoxy(6,3);
+   //   lcd_putint(blockcounter & 0x00FF);
 
-//   //eeprom_update_word(&eeprom_blockcount,blockcounter);
-//   //eeprom_update_word(&eeprom_messungcount,messungcounter);
+      //   //eeprom_update_word(&eeprom_blockcount,blockcounter);
+   //   //eeprom_update_word(&eeprom_messungcount,messungcounter);
    
    //          lcd_gotoxy(19,1);
    //         lcd_putc('+');
@@ -913,12 +913,12 @@ void load_start(uint8_t manuell)
    
    // nicht verwendet
     uint8_t kan = 0;
-//     lcd_gotoxy(8,2);
+   //     lcd_gotoxy(8,2);
    for(kan = 0;kan < 4;kan++)
    {
-//        lcd_putint2(kanalstatusarray[kan]);
+   //        lcd_putint2(kanalstatusarray[kan]);
    }
-//       _delay_ms(100);          
+   //       _delay_ms(100);          
    for(kan = 0;kan < 4;kan++)
    {
       kanalstatusarray[kan] = recvbuffer[KANAL_BYTE + kan];
@@ -927,7 +927,7 @@ void load_start(uint8_t manuell)
 //     lcd_gotoxy(8,2);
    for(kan = 0;kan < 4;kan++)
    {
-//       lcd_putint2(kanalstatusarray[kan]);
+      //       lcd_putint2(kanalstatusarray[kan]);
    
    }
    PWM_A = 100;
@@ -1046,7 +1046,7 @@ void loop()
   
    loopcount0+=1;
    //digitalWrite(9, !digitalRead(9));
-   analogWrite(9,analogdata );
+   //(9,analogdata );
    if (loopcount0==0x0FFF)
    {
       /*
@@ -1082,7 +1082,7 @@ void loop()
          lcd_putint12(adctimersekunde);
          lcd_gotoxy(0,0);
          lcd_puts("PW: ");
-         lcd_putint(PWM_A);
+         lcd_putint12(PWM_A);
 
          /*
          lcd_puts(" M_PW");
@@ -1204,28 +1204,7 @@ void loop()
          lcd_puts(float_StringO);
          //lcd_putc('*');
          
-         /*
-         //Serial.print(F("****   *** **** loop "));
-         //Serial.print(F(" batt_M_Spannung "));
-         //Serial.print(batt_M_Spannung);
-         //Serial.print(F(" batt_O_Spannung "));
-         //Serial.println(batt_O_Spannung);
-
-         
-         
-         //Serial.print(F("****   curr_L: "));
-         //Serial.print(curr_L_Mitte);
-         //        //Serial.print(F(" Mittebuffer: "));
-         //        //Serial.print(curr_L_Mittebuffer);
-         ////Serial.print(F(" curr_O: "));
-         /*
-         //Serial.println(curr_O_Mitte);
-         for (uint8_t l = 0;l<8;l++)
-         {
-            //Serial.print(curr_L_Array[l]);
-            //Serial.print(F(" "));
-         }
-         */
+ 
          ////Serial.println();
          
          
@@ -1235,6 +1214,7 @@ void loop()
          //      lcd_putc(' ');
          //      lcd_putint12(usbsendcounter);
 
+         
       
       
       } // loopcount
@@ -1249,11 +1229,11 @@ void loop()
    //if(sinceLastADC > 10)
    {
       sinceLastADC = 0;
-      //OSZIALO();
+      OSZIALO();
       temp_SOURCE = adc->adc0->analogRead(ADC_TEMP_SOURCE);
       batt_M =  adc->adc0->analogRead(ADC_M);
       batt_O =  adc->adc0->analogRead(ADC_O);
-      //OSZIAHI();
+      OSZIAHI();
    }
 
    // MARK: MESSUNG_OK  
@@ -1642,7 +1622,7 @@ void loop()
       sinceRecv = 0;
       recvbuffer[0] = 0; // nichts senden, wenn kein taskcode
       noInterrupts();
-      r = RawHID.recv(recvbuffer, 0); 
+      r = RawHID.recv((void*)recvbuffer, 0); 
       usbrecvcounter++;
       if (r > 0)
       {
