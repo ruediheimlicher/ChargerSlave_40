@@ -72,11 +72,11 @@
 #define BATT_OFF_RAW 885 
 #define BATT_MAX_RAW 880
 
-#define STROM_HI  1000 // mA
+//#define STROM_HI  1000 // mA
 #define STROM_LO  50   // mA
 #define STROM_REP  100 // Reparaturstrom bei Unterspannung
 
-#define STROM_HI_RAW  950 // ADC-Wert
+#define STROM_HI_RAW  600 // ADC-Wert
 #define STROM_LO_RAW  50   // mA
 #define STROM_REP_RAW  100 // Reparaturstrom bei Unterspannung
 

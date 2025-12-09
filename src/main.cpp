@@ -627,7 +627,7 @@ void start_Load()
    cli();
    //Serial.print(F("MANUELL MESSUNG_START"));
    
-   MAX_PWM_A = 500; //recvbuffer[MAX_STROM_L_BYTE] | (recvbuffer[MAX_STROM_H_BYTE]<<8);
+   MAX_PWM_A = 512; //recvbuffer[MAX_STROM_L_BYTE] | (recvbuffer[MAX_STROM_H_BYTE]<<8);
    
    //Serial.print(F(" MAX_PWM_A "));
    //Serial.println(MAX_PWM_A);
@@ -755,7 +755,7 @@ void setup()
    
    hoststatus |= (1<<MESSUNG_OK);
    
-   analogWriteResolution(12);   // 12 Bit -> 0–4095
+   analogWriteResolution(10);   // 12 Bit -> 0–4095
   analogWriteFrequency(9, 20000); // 20 kHz
   //analogWrite(9, analogdata & 0x2FFF);   // 50 % Duty
    
@@ -1081,11 +1081,12 @@ void loop()
          lcd_gotoxy(16,0);
          lcd_putint12(adctimersekunde);
          lcd_gotoxy(0,0);
-         lcd_puts("PW: ");
+         lcd_puts("PW:");
          lcd_putint12(PWM_A);
-
+         lcd_puts(" M:");
+         lcd_putint12(MAX_PWM_A);
          /*
-         lcd_puts(" M_PW");
+         lcd_puts(" M:");
          lcd_putint12(MAX_PWM_A);
          lcd_gotoxy(0,1);
          lcd_putc('O');
@@ -1204,17 +1205,29 @@ void loop()
          lcd_puts(float_StringO);
          //lcd_putc('*');
          
- 
-         ////Serial.println();
+         // Data to slave
+         noInterrupts();
+         sendbuffer[0] = TEENSY_DATA;
+         sendbuffer[U_M_L_BYTE + DATA_START_BYTE] = batt_M_Mitte & 0x00FF;
+         sendbuffer[U_M_H_BYTE + DATA_START_BYTE] = (batt_M_Mitte & 0xFF00)>>8;
          
-         
+         sendbuffer[U_O_L_BYTE + DATA_START_BYTE] = batt_O_Mitte & 0x00FF;
+         sendbuffer[U_O_H_BYTE + DATA_START_BYTE] = (batt_O_Mitte & 0xFF00)>>8;
+
+         sendbuffer[STROM_A_L_BYTE + DATA_START_BYTE] = curr_L_Mitte & 0x00FF;
+         sendbuffer[STROM_A_H_BYTE + DATA_START_BYTE] = (curr_L_Mitte & 0xFF00)>>8;
+
+         interrupts();
+         hoststatus |= (1<<SEND_OK);
+
+
          //     lcd_putint16(batt_M_Spannung);
          //     lcd_putc(' ');
          //     lcd_puthex(senderfolg);
          //      lcd_putc(' ');
          //      lcd_putint12(usbsendcounter);
 
-         
+
       
       
       } // loopcount
@@ -1232,6 +1245,8 @@ void loop()
       OSZIALO();
       temp_SOURCE = adc->adc0->analogRead(ADC_TEMP_SOURCE);
       batt_M =  adc->adc0->analogRead(ADC_M);
+   
+
       batt_O =  adc->adc0->analogRead(ADC_O);
       OSZIAHI();
    }
@@ -1303,6 +1318,7 @@ void loop()
       curr_L_Mittebuffer = curr_L_Mitte;
       curr_L_Mitte /= 8;
 
+
       sendbuffer[STROM_A_L_BYTE + DATA_START_BYTE] = curr_L_Mitte & 0x00FF;
       sendbuffer[STROM_A_H_BYTE + DATA_START_BYTE] = (curr_L_Mitte & 0xFF00)>>8;
      
@@ -1330,8 +1346,11 @@ void loop()
       lcd_gotoxy(0,1);
       lcd_puts("T:");
       lcd_putint(temp_SOURCE);
-      
+      float tempfloat = -1.29 * temp_SOURCE + 232;
+      // void lcd_put_frac(char* string, uint8_t start, uint8_t komma, uint8_t frac) 
       lcd_puts("  ");
+      uint8_t tempint = (uint8_t)tempfloat;
+      lcd_putint(tempint);
 
       for (int i=0;i<48;i++)
       {
@@ -1439,17 +1458,7 @@ void loop()
          //PWM_A_SET
          if (((batt_M_Mitte >= BATT_MIN_RAW) && (batt_O_Mitte >= BATT_MIN_RAW)) && ((batt_M_Mitte <= BATT_MAX_RAW) || (batt_O_Mitte  <= BATT_MAX_RAW)))
          {
-            //Serial.print(F(" strom ist < STROM_HI_RAW. curr_L: "));
-            //Serial.print(curr_L_Mitte);
-            //Serial.print(F(" PWM_A: "));
-            //Serial.print(PWM_A);
-            //Serial.print(F(" MAX_PWM_A: "));
-            //Serial.print(MAX_PWM_A);
-            //Serial.print(F(" hoststatus: "));
-            //Serial.print(hoststatus);
-            //Serial.print(F(" loadstatus: "));
-            //Serial.println(loadstatus);
-
+          
             if ((curr_L_Mitte < STROM_HI_RAW) && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
             {
                //Serial.print(F("  PWM Action "));
@@ -1463,8 +1472,6 @@ void loop()
                   //Serial.print(F("  PWM_A--8: "));
                   PWM_A -= 8;
                }
-               ////Serial.print(F("                        PWM_A++: "));
-               //Serial.println(PWM_A);
 
                analogWrite(9,PWM_A);
             }
@@ -1475,9 +1482,6 @@ void loop()
             //Serial.print(F("Strom ist > BATT_MAX_RAW curr_L: "));
             //hoststatus &= ~(1<<LADUNG_RUN);  // Ladungszyklus beenden
             loadstatus |= (1<<BATT_DOWN_BIT); // Strom absenken
-            //Serial.print(curr_L_Mitte);
-            //Serial.print(F(" PWM_A: "));
-            //Serial.println(PWM_A);
             if ((curr_L_Mitte > STROM_REP_RAW) )
             {
                //PWM_A -= 16;
@@ -1562,33 +1566,33 @@ void loop()
       //     //Serial.print(F(" messungcounter: "));
       //     //Serial.println(messungcounter);
       
-      
+   
       strommessungcounter++;
-      
+   
       sendbuffer[BLOCKOFFSETLO_BYTE] = blockcounter & 0x00FF; // Byte 3, 4
       sendbuffer[BLOCKOFFSETHI_BYTE] = (blockcounter & 0xFF00)>>8; // Nummer des geschriebenen Blocks hi
-      
+   
       //   if (batt_M > 
-      
+   
       /*    
-       if (hoststatus & (1<<SEND_OK))
-       {
-       hoststatus &= ~(1<<SEND_OK);
-       senderfolg = RawHID.send((void*)sendbuffer, 100);
-       if (senderfolg > 0) 
-       {
-       ////Serial.print(F(" ADC packet "));
-       ////Serial.println(packetcount);
-       packetcount = packetcount + 1;
-       
-       } else {
-       //Serial.println(F("Unable to transmit packet"));
-       }
-       //Serial.print(F("***  senderfolg: "));
-       //Serial.println(senderfolg);
-       usbsendcounter++;
-       }
-       */  
+      if (hoststatus & (1<<SEND_OK))
+      {
+      hoststatus &= ~(1<<SEND_OK);
+      senderfolg = RawHID.send((void*)sendbuffer, 100);
+      if (senderfolg > 0) 
+      {
+      ////Serial.print(F(" ADC packet "));
+      ////Serial.println(packetcount);
+      packetcount = packetcount + 1;
+      
+      } else {
+      //Serial.println(F("Unable to transmit packet"));
+      }
+      //Serial.print(F("***  senderfolg: "));
+      //Serial.println(senderfolg);
+      usbsendcounter++;
+      }
+      */  
       OSZIBHI(); 
    } // if MESSUNG_OK
    
@@ -1603,11 +1607,13 @@ void loop()
          ////Serial.println(packetcount);
          packetcount = packetcount + 1;
          
-      } else {
+      } 
+      else 
+      {
          //Serial.println(F("Unable to transmit packet"));
       }
-  //    //Serial.print(F("***  senderfolg: "));
-  //    //Serial.println(senderfolg);
+         //    //Serial.print(F("***  senderfolg: "));
+         //    //Serial.println(senderfolg);
       usbsendcounter++;
    }
 
@@ -1637,6 +1643,7 @@ void loop()
                //Serial.print(("STROM_SET  0x88 "));
                
                PWM_A_SET = ((recvbuffer[STROM_A_H_BYTE]) << 8) | recvbuffer[STROM_A_L_BYTE] ;
+
                ////Serial.print("STROM PWM_A:");
                ////Serial.println(PWM_A); 
                //analogWrite(23,PWM_A);
@@ -1647,13 +1654,9 @@ void loop()
                
             case MAX_STROM_SET:
             {
-               //Serial.print(("MAX_STROM_SET  0x90 "));
-               
-               MAX_PWM_A = ((recvbuffer[MAX_STROM_H_BYTE]) << 8) | recvbuffer[MAX_STROM_L_BYTE] ;
-               ////Serial.print("MAX STROM MAX_PWM_A:");
-               ////Serial.println(MAX_PWM_A); 
- 
-            
+                
+               MAX_PWM_A = ((recvbuffer[MAX_STROM_H_BYTE]) << 8) | recvbuffer[MAX_STROM_L_BYTE];
+              
             }break;   
                
                  
