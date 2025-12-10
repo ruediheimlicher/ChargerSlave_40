@@ -502,6 +502,14 @@ void OSZIBHI()
    digitalWriteFast(OSZI_PULS_B, 1);
 }
 
+const float alpha = 0.1f;    // Glättung
+float avg = 0.0f;
+
+float lerp(float a, float b, float t) 
+{
+    return a + t * (b - a);
+}
+
 void init_analog(void) 
 {
    analogWriteFrequency(4, 375000);
@@ -1244,10 +1252,15 @@ void loop()
       sinceLastADC = 0;
       OSZIALO();
       temp_SOURCE = adc->adc0->analogRead(ADC_TEMP_SOURCE);
-      batt_M =  adc->adc0->analogRead(ADC_M);
+      
+      float batt_M_raw =  adc->adc0->analogRead(ADC_M);
+
+      batt_M = batt_M + alpha * (batt_M_raw - batt_M);   // EMA-Filter
+      //batt_M_Mitte = batt_M;
    
 
-      batt_O =  adc->adc0->analogRead(ADC_O);
+      float batt_O_raw =  adc->adc0->analogRead(ADC_O);
+      batt_O = batt_O + alpha * (batt_O_raw - batt_O);   // EMA-Filter
       OSZIAHI();
    }
 
@@ -1271,6 +1284,7 @@ void loop()
       batt_M_Array[batt_M_pos & 0x07] = batt_M;
       batt_M_pos++;
       uint8_t mpos = 0;
+      /*
       batt_M_Mitte = 0;
       
       for (mpos = 0; mpos < 8; mpos++)
@@ -1278,6 +1292,8 @@ void loop()
          batt_M_Mitte += batt_M_Array[mpos];
       }
       batt_M_Mitte /= 8;
+      */
+      batt_M_Mitte = batt_M;
       batt_M_Spannung = (((batt_M_Mitte  * TEENSYVREF_Int) )* ADC_U_FAKTOR )>>10 ;
 
       sendbuffer[U_M_L_BYTE + DATA_START_BYTE] = batt_M_Mitte & 0x00FF;
@@ -1298,6 +1314,7 @@ void loop()
          batt_O_Mitte += batt_O_Array[mpos];
       }
       batt_O_Mitte /= 8;
+      batt_O_Mitte = batt_O;
       batt_O_Spannung = (((batt_O_Mitte  * TEENSYVREF_Int) )* ADC_U_FAKTOR )>>10 ;
       sendbuffer[U_O_L_BYTE + DATA_START_BYTE] = batt_O_Mitte & 0x00FF;
       sendbuffer[U_O_H_BYTE + DATA_START_BYTE] = (batt_O_Mitte & 0xFF00)>>8;
@@ -1391,57 +1408,11 @@ void loop()
     
       
       interrupts();
-      
-      //Serial.println(F("MESSUNG_OK "));
-      //Serial.print(F("Batt_M "));
-      //Serial.print(batt_M_Mitte);
-      //Serial.print(F(" batt_M_Spannung "));
-      //Serial.print(batt_M_Spannung);
      
-      
-      //Serial.print(F(" Batt_O "));
-      //Serial.print(batt_O_Mitte);
-      //Serial.print(F(" batt_O_Spannung "));
-      //Serial.print(batt_O_Spannung);
- 
-
-      //Serial.print(F(" Balance "));
-      //Serial.print(U_Balance_Mitte);
-     
-
-      //Serial.print(F(" curr_L: ")); // shunt
-      //Serial.println(curr_L_Mitte);
-
-      //      //Serial.print(F("hoststatus: "));
-      //     //Serial.println(hoststatus);
 
       if (hoststatus & (1<<MESSUNG_RUN))
       {
-         //Serial.print(F("MESSUNG_RUN OK "));
-         //Serial.print(F(" hoststatus: "));
-         //Serial.println(hoststatus);
 
-         /*
-         //Serial.print(F(" batt_M "));
-         //Serial.print(batt_M_Mitte);
-         
-         //Serial.print(F(" batt_O "));
-         //Serial.println(batt_O_Mitte);
-         
-         //Serial.print(F(" Balance "));
-         //Serial.print(U_Balance_Mitte);
-        
-
-         //Serial.print(F(" curr_L: ")); // shunt
-         //Serial.println(curr_L_Mitte);
-          */
-         /*
-         //Serial.print(F(" BATT_MIN_RAW "));
-         //Serial.print(BATT_MIN_RAW);
-         
-         //Serial.print(F(" BATT_MAX_RAW "));
-         //Serial.println(BATT_MAX_RAW);
-         */
          //loadstatus &= ~(1<<BATT_DOWN_BIT);
          
          
