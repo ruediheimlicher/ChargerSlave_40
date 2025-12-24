@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "Netzteil_24_Teensy41",
+			"path": "../../../Elektronik/Netzteil/Netzteil_Teensy41/Netzteil_24_Teensy41"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}
