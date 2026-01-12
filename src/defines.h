@@ -76,7 +76,7 @@
 #define STROM_LO  50   // mA
 #define STROM_REP  100 // Reparaturstrom bei Unterspannung
 
-#define STROM_HI_RAW  600 // ADC-Wert
+#define STROM_HI_RAW  850 // ADC-Wert
 #define STROM_LO_RAW  50   // mA
 #define STROM_REP_RAW  100 // Reparaturstrom bei Unterspannung
 

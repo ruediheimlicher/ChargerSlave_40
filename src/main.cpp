@@ -94,7 +94,6 @@ uint16_t                batt_O_Array[8] = {};
 uint8_t                 batt_O_pos = 0;
 uint16_t                batt_O_Mitte = 0;  // gleitender Mittelwert
 
-uint16_t                Strom_HI_SET = STROM_HI_RAW;
 volatile uint16_t       curr_U = 0;
 volatile uint16_t       curr_B = 0;
 
@@ -1086,8 +1085,8 @@ void loop()
 
          //Spannung = wert * TEENSYVREF / 1024
          
-         lcd_gotoxy(16,0);
-         lcd_putint12(adctimersekunde);
+         lcd_gotoxy(17,0);
+         lcd_putint(adctimersekunde);
          lcd_gotoxy(0,0);
          lcd_puts("PW:");
          lcd_putint12(PWM_A);
@@ -1324,7 +1323,14 @@ void loop()
       
        
       // Strom Charger
-      curr_L = adc->adc0->analogRead(ADC_SHUNT); // normiert auf Masse
+      float curr_L_raw = adc->adc0->analogRead(ADC_SHUNT); // normiert auf Masse
+
+      curr_L = curr_L + alpha * (curr_L_raw - curr_L);   // EMA-Filter
+      uint32_t curr_rev = (((curr_L  * TEENSYVREF_Int) )* ADC_U_FAKTOR )>>10 ;
+      lcd_gotoxy(12,1);
+      lcd_putint12(PWM_A_SET);
+
+      /*
       curr_L_Array[(curr_L_pos & 0x07)] = curr_L;
       curr_L_pos++;
       curr_L_Mitte = 0;
@@ -1334,6 +1340,8 @@ void loop()
       }
       curr_L_Mittebuffer = curr_L_Mitte;
       curr_L_Mitte /= 8;
+      */
+      curr_L_Mitte = curr_L;
 
 
       sendbuffer[STROM_A_L_BYTE + DATA_START_BYTE] = curr_L_Mitte & 0x00FF;
@@ -1430,7 +1438,7 @@ void loop()
          if (((batt_M_Mitte >= BATT_MIN_RAW) && (batt_O_Mitte >= BATT_MIN_RAW)) && ((batt_M_Mitte <= BATT_MAX_RAW) || (batt_O_Mitte  <= BATT_MAX_RAW)))
          {
           
-            if ((curr_L_Mitte < STROM_HI_RAW) && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
+            if ((curr_L_Mitte < STROM_HI_RAW) && (curr_L_Mitte < PWM_A_SET) && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
             {
                //Serial.print(F("  PWM Action "));
                if (PWM_A < (MAX_PWM_A - 17))
