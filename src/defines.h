@@ -68,7 +68,7 @@
 #define U_MAX  4.2
 
 #define RAW_U_FAKTOR
-#define BATT_MIN_RAW 650 // Wert fuer Vergleich mit ADC
+#define BATT_MIN_RAW 350 // Wert fuer Vergleich mit ADC
 #define BATT_OFF_RAW 885 
 #define BATT_MAX_RAW 880
 

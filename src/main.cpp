@@ -1434,26 +1434,36 @@ void loop()
             
             analogWrite(9,PWM_A);
          }
+
          //PWM_A_SET
          if (((batt_M_Mitte >= BATT_MIN_RAW) && (batt_O_Mitte >= BATT_MIN_RAW)) && ((batt_M_Mitte <= BATT_MAX_RAW) || (batt_O_Mitte  <= BATT_MAX_RAW)))
          {
           
-            if ((curr_L_Mitte < STROM_HI_RAW) && (curr_L_Mitte < PWM_A_SET) && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
+            //if ((curr_L_Mitte < STROM_HI_RAW) && (curr_L_Mitte < PWM_A_SET) && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
+            
+            if((curr_L_Mitte > (MAX_PWM_A + 8)) )
+            {
+               PWM_A -= 8;
+               analogWrite(9,PWM_A);
+            }
+            
+            else if ((curr_L_Mitte < MAX_PWM_A)  && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
             {
                //Serial.print(F("  PWM Action "));
-               if (PWM_A < (MAX_PWM_A - 17))
+               if (PWM_A < (PWM_A_SET - 17))
                {
                   //Serial.print(F("  PWM_A++16: "));
                   PWM_A += 16;
                }
-               else if (PWM_A > (MAX_PWM_A +8))
+               else if (PWM_A > (PWM_A_SET +8))
                {
                   //Serial.print(F("  PWM_A--8: "));
                   PWM_A -= 8;
                }
 
-               analogWrite(9,PWM_A);
+               
             }
+            analogWrite(9,PWM_A);
          }
          
          if ((batt_M_Mitte > BATT_MAX_RAW) || (batt_O_Mitte > BATT_MAX_RAW))
