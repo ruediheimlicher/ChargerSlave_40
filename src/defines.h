@@ -69,8 +69,8 @@
 
 #define RAW_U_FAKTOR
 #define BATT_MIN_RAW 350 // Wert fuer Vergleich mit ADC
-#define BATT_OFF_RAW 885 
-#define BATT_MAX_RAW 880
+#define BATT_OFF_RAW 1000 
+#define BATT_MAX_RAW 1000
 
 //#define STROM_HI  1000 // mA
 #define STROM_LO  50   // mA
@@ -164,6 +164,7 @@
 #define BATT_MAX_BIT   0
 #define BATT_MIN_BIT   1
 #define BATT_DOWN_BIT   2
+#define BATT_OFF_BIT    3
 
 // buffer
 #define USB_DATENBREITE 64
@@ -193,6 +194,9 @@
 
 #define BALANCE_L_BYTE   28
 #define BALANCE_H_BYTE   29
+
+#define LOADSTATUS_BYTE    32
+
 
 #define DEVICE_BYTE        0
 // Bits fuer DEVICE_BYTE (byte auf 0 gesetzt)

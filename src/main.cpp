@@ -626,6 +626,7 @@ void start_Load()
    hoststatus |= (1<<LADUNG_RUN); 
    
    loadstatus &= ~(1<<BATT_DOWN_BIT);
+   loadstatus &= ~(1<<BATT_OFF_BIT);
    digitalWrite(LOAD_START,1);
    _delay_ms(100);
    digitalWrite(LOAD_START,0);
@@ -1438,9 +1439,7 @@ void loop()
          //PWM_A_SET
          if (((batt_M_Mitte >= BATT_MIN_RAW) && (batt_O_Mitte >= BATT_MIN_RAW)) && ((batt_M_Mitte <= BATT_MAX_RAW) || (batt_O_Mitte  <= BATT_MAX_RAW)))
          {
-          
-            //if ((curr_L_Mitte < STROM_HI_RAW) && (curr_L_Mitte < PWM_A_SET) && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
-            
+                      
             if((curr_L_Mitte > (MAX_PWM_A + 8)) )
             {
                PWM_A -= 8;
@@ -1450,7 +1449,7 @@ void loop()
             else if ((curr_L_Mitte < MAX_PWM_A)  && (hoststatus & (1<<LADUNG_RUN)) && (!(loadstatus & (1<<BATT_DOWN_BIT))))
             {
                //Serial.print(F("  PWM Action "));
-               if (PWM_A < (PWM_A_SET - 17))
+               if (PWM_A <= (PWM_A_SET - 17))
                {
                   //Serial.print(F("  PWM_A++16: "));
                   PWM_A += 16;
@@ -1513,7 +1512,7 @@ void loop()
          //Serial.println(curr_L_Mitte);
          //lcd_gotoxy(8,0);
          //lcd_puts("FULL ");
-         
+         hoststatus |= (1<<BATT_OFF_BIT);
          PWM_A = 0;
          analogWrite(9,PWM_A);
         
@@ -1547,20 +1546,18 @@ void loop()
          sendbuffer[DATACOUNT_LO_BYTE] = (messungcounter & 0x00FF);
          sendbuffer[DATACOUNT_HI_BYTE] = ((messungcounter & 0xFF00)>>8);
          hoststatus |= (1<<SEND_OK);
+
       }
       // hoststatus |= (1<<SEND_OK);
       // messungcounter uebergeben
-      //     //Serial.print(F(" strommessungcounter: "));
-      //     //Serial.print(strommessungcounter);
-      //     //Serial.print(F(" messungcounter: "));
-      //     //Serial.println(messungcounter);
-      
+    
    
       strommessungcounter++;
    
       sendbuffer[BLOCKOFFSETLO_BYTE] = blockcounter & 0x00FF; // Byte 3, 4
       sendbuffer[BLOCKOFFSETHI_BYTE] = (blockcounter & 0xFF00)>>8; // Nummer des geschriebenen Blocks hi
-   
+
+      sendbuffer[LOADSTATUS_BYTE] = loadstatus;
       //   if (batt_M > 
    
       /*    
@@ -1690,6 +1687,7 @@ void loop()
                hoststatus |= (1<<LADUNG_RUN); 
                
                loadstatus &= ~(1<<BATT_DOWN_BIT);
+               loadstatus &= ~(1<<BATT_OFF_BIT);
                
                //            clear_sendbuffer();
                cli();
