@@ -74,7 +74,7 @@ volatile uint8_t           senderfolg = 0;
 volatile uint8_t           status=0;
 
 volatile uint16_t           PWM_A=0;
-volatile uint16_t           PWM_A_SET=0; // Obere Grenze
+volatile uint16_t           PWM_A_SET=BATT_MIN_RAW; // Obere Grenze
 volatile uint16_t           MAX_PWM_A=100; // Maximalwert
 
 uint32_t                    batt_M_Spannung  = 0;
@@ -1252,6 +1252,13 @@ void loop()
       sinceLastADC = 0;
       OSZIALO();
       temp_SOURCE = adc->adc0->analogRead(ADC_TEMP_SOURCE);
+      if((temp_SOURCE & 0x00FF) > 0)
+      {
+         sendbuffer[TEMP_SOURCE_L_BYTE + DATA_START_BYTE] = temp_SOURCE & 0x00FF;
+         sendbuffer[TEMP_SOURCE_H_BYTE + DATA_START_BYTE] = (temp_SOURCE & 0xFF00)>>8;
+     
+      }
+      
       
       float batt_M_raw =  adc->adc0->analogRead(ADC_M);
 
@@ -1330,6 +1337,8 @@ void loop()
       uint32_t curr_rev = (((curr_L  * TEENSYVREF_Int) )* ADC_U_FAKTOR )>>10 ;
       lcd_gotoxy(12,1);
       lcd_putint12(PWM_A_SET);
+      lcd_gotoxy(17,1);
+      lcd_putint(loadstatus);
 
       /*
       curr_L_Array[(curr_L_pos & 0x07)] = curr_L;
@@ -1352,17 +1361,9 @@ void loop()
       sendbuffer[I_SHUNT_H_BYTE + DATA_START_BYTE] = (curr_L_Mitte & 0xFF00)>>8;
      
       
-      
-      
-       
-      
-      
-      
       //    //Serial.print(F(" ADC usbsendcounter: "));
       //     //Serial.print(usbsendcounter);
-
-      
-      
+ 
       sendbuffer[DEVICE_BYTE + DATA_START_BYTE] |= (1<<STROM_ID);
       //    sendbuffer[I_SHUNT_O_L_BYTE + DATA_START_BYTE] = curr_B & 0x00FF;
       //    sendbuffer[I_SHUNT_O_H_BYTE + DATA_START_BYTE] = (curr_B & 0xFF00)>>8;
@@ -1391,8 +1392,8 @@ void loop()
       
       temp_BATT = adc->adc0->analogRead(ADC_TEMP_BATT);
       
-      sendbuffer[TEMP_SOURCE_L_BYTE + DATA_START_BYTE] = temp_SOURCE & 0x00FF;
-      sendbuffer[TEMP_SOURCE_H_BYTE + DATA_START_BYTE] = (temp_SOURCE & 0xFF00)>>8;
+      //sendbuffer[TEMP_SOURCE_L_BYTE + DATA_START_BYTE] = temp_SOURCE & 0x00FF;
+      //sendbuffer[TEMP_SOURCE_H_BYTE + DATA_START_BYTE] = (temp_SOURCE & 0xFF00)>>8;
       
       sendbuffer[TEMP_SOURCE_H_BYTE + DATA_START_BYTE] = temp_CELSIUS;
       
@@ -1691,6 +1692,7 @@ void loop()
                
                //            clear_sendbuffer();
                cli();
+               
                
                
                MAX_PWM_A = recvbuffer[MAX_STROM_L_BYTE] | (recvbuffer[MAX_STROM_H_BYTE]<<8);
